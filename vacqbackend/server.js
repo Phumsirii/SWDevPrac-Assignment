@@ -2,17 +2,45 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cookieParser=require('cookie-parser');
 const connectDB=require('./config/db');
+const mongoSanitize=require('express-mongo-sanitize');
+const helmet = require('helmet');
+const {xss}=require('express-xss-sanitizer');
+const rateLimit=require('express-rate-limit');
+const hpp=require('hpp');
+const cors=require('cors');
 
 dotenv.config({path:'./config/config.env'});
 
 connectDB();
 
-const cors=require('cors');
 const app=express();
+
+//Enable CORS
 app.use(cors());
 
 //Body Parser
 app.use(express.json());
+
+//Sanitize data
+app.use(mongoSanitize());
+
+//Set security headers
+app.use(helmet());
+
+//Prevetn XSS attacks
+app.use(xss());
+
+//Rate limiting
+const limiter=rateLimit({
+    windowsMs:1*60*1000,
+    max:100
+});
+
+//Use limiter
+app.use(limiter);
+
+//Prevent http param pollutions
+app.use(hpp());
 
 //Cookie Parser
 app.use(cookieParser());
